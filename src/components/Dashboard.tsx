@@ -13,41 +13,41 @@ interface CalculationType {
 
 const calculationTypes: CalculationType[] = [
   {
-    id: "slope",
-    title: "Slope Calculations",
-    description: "Calculate slopes, grades, and angular measurements",
+    id: "civil",
+    title: "Civil Engineering",
+    description: "Slope calculations, earthwork, drainage design, and ADA compliance",
     icon: Ruler,
     category: "Civil Engineering",
     color: "engineering-blue"
   },
   {
-    id: "ph",
-    title: "pH & Chemical Balance",
-    description: "pH calculations, buffer solutions, and titrations",
+    id: "chemical",
+    title: "Chemical Engineering", 
+    description: "pH calculations, buffer solutions, titrations, and stoichiometry",
     icon: Beaker,
     category: "Chemical Engineering",
     color: "engineering-success"
   },
   {
-    id: "head-pressure",
-    title: "Head Pressure",
-    description: "Fluid head calculations and pressure analysis",
+    id: "fluid",
+    title: "Fluid Dynamics",
+    description: "Head pressure, flow calculations, Bernoulli's equation, and pump sizing",
     icon: Droplet,
-    category: "Fluid Dynamics",
+    category: "Fluid Dynamics", 
     color: "accent"
   },
   {
     id: "electrical",
-    title: "Electrical Calculations",
-    description: "Voltage, current, resistance, and power calculations",
+    title: "Electrical Engineering",
+    description: "Ohm's law, power calculations, AC/DC circuits, and electrical analysis",
     icon: Zap,
     category: "Electrical Engineering",
     color: "engineering-warning"
   },
   {
     id: "structural",
-    title: "Structural Analysis",
-    description: "Load calculations, beam analysis, and stress calculations",
+    title: "Structural Engineering", 
+    description: "Beam analysis, stress calculations, deflection, and structural design",
     icon: Wrench,
     category: "Structural Engineering",
     color: "primary"
@@ -55,7 +55,7 @@ const calculationTypes: CalculationType[] = [
   {
     id: "general",
     title: "General Calculations",
-    description: "Unit conversions, basic math, and custom formulas",
+    description: "Unit conversions, basic math, custom formulas, and mathematical analysis",
     icon: Calculator,
     category: "General",
     color: "engineering-gray"
