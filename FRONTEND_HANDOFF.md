@@ -16,7 +16,7 @@ This document provides the frontend agent with all necessary information to conn
 The backend is configured to accept requests from:
 - ✅ `https://engineering-calc-api.vercel.app`
 - ✅ `https://engineering-calc-api.vercel.app/`
-- ✅ `https://engineering-calc-frontend.vercel.app` (if separate frontend)
+- ✅ `https://engineer-brain-tool.vercel.app` (deployed frontend)
 - ✅ Local development URLs (localhost:5173, 3000, 4173)
 
 ---

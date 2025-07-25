@@ -108,6 +108,8 @@ If you encounter CORS errors:
 2. **Verify Environment Variables**: Make sure `VITE_API_BASE_URL` is set correctly
 3. **Check Network Tab**: Look for CORS preflight requests in browser dev tools
 4. **Test with API Test Component**: Use the built-in test component to verify connectivity
+5. **Frontend Deployment**: Ensure frontend is deployed to `engineer-brain-tool.vercel.app`
+6. **Backend CORS Update**: Backend needs to allow requests from `engineer-brain-tool.vercel.app`
 
 ### Common Error Messages
 
@@ -119,6 +121,7 @@ If you encounter CORS errors:
 
 - **Development**: Use `http://localhost:3001` for local backend testing
 - **Production**: Use `https://engineering-calc-api.vercel.app` for deployed backend
+- **Frontend URL**: `https://engineer-brain-tool.vercel.app` (deployed frontend)
 
 ## 📱 Frontend Integration
 
