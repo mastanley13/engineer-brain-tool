@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calculator } from "lucide-react";
 import { calculationsByCategory, type SpecificCalculation } from "@/data/calculationTypes";
+import { calculateSlope } from "@/lib/api";
 
 interface CalculationType {
   id: string;
@@ -53,12 +54,19 @@ export default function CalculationInterface({ calculationType, onBack, onSelect
       // Only handle slope-basic for now
       if (selectedCalc?.id === "slope-basic") {
         const { rise = "", run = "" } = inputs;
-        const res = await fetch(
-          `https://engineering-calc-api.vercel.app/api/slope?rise=${encodeURIComponent(rise)}&run=${encodeURIComponent(run)}`
-        );
-        if (!res.ok) throw new Error("API error");
-        const data = await res.json();
-        setResult(data);
+        
+        if (!rise || !run) {
+          setError("Please enter both rise and run values");
+          return;
+        }
+
+        const response = await calculateSlope(parseFloat(rise), parseFloat(run));
+        
+        if (response.success) {
+          setResult(response.data);
+        } else {
+          setError(response.error);
+        }
       } else {
         setError("Calculation not implemented yet.");
       }
@@ -129,9 +137,15 @@ export default function CalculationInterface({ calculationType, onBack, onSelect
             {error && <div className="text-red-500 mt-4">{error}</div>}
             {result && (
               <div className="mt-6 bg-muted/30 rounded p-4">
+                <h3 className="font-semibold mb-2">Results:</h3>
                 <p><strong>Slope:</strong> {result.slope}%</p>
                 <p><strong>Angle:</strong> {result.angle}°</p>
-                <pre className="bg-muted/50 rounded p-2 mt-2 whitespace-pre-wrap">{result.workShown}</pre>
+                {result.workShown && (
+                  <div className="mt-3">
+                    <h4 className="font-medium mb-1">Work Shown:</h4>
+                    <pre className="bg-muted/50 rounded p-2 text-sm whitespace-pre-wrap">{result.workShown}</pre>
+                  </div>
+                )}
               </div>
             )}
           </div>

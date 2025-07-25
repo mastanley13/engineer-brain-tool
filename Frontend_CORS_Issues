@@ -1,0 +1,111 @@
+Here’s a clear set of instructions you can give directly to your **Frontend Agent** to resolve the current CORS + 401 issues when calling the backend from `http://localhost:8080`.
+
+---
+
+## ✅ Frontend Agent Instructions: Fix "Failed to Fetch" & CORS Issue
+
+---
+
+### 🔍 Problem Summary
+
+Your fetch to:
+
+```
+https://engineering-calc-api.vercel.app/api/slope?rise=6&run=12
+```
+
+is returning:
+
+1. **CORS error**: No `Access-Control-Allow-Origin` header.
+2. **401 Unauthorized**: Possibly due to incorrect `fetch` options or backend behavior.
+
+---
+
+## ✅ Step-by-Step Fixes
+
+### 🔧 1. Double-check the `fetch()` call syntax
+
+**DO NOT** include `credentials: "include"` unless you're working with authenticated APIs.
+
+✅ Correct version:
+
+```ts
+const res = await fetch(`https://engineering-calc-api.vercel.app/api/slope?rise=${rise}&run=${run}`);
+const data = await res.json();
+```
+
+---
+
+### ❌ Avoid this unless absolutely required:
+
+```ts
+// This triggers CORS preflight and may cause 401
+fetch(url, {
+  method: "GET",
+  credentials: "include",  // ❌ avoid unless using cookies or sessions
+  headers: {
+    "Content-Type": "application/json", // ❌ avoid for GET if not needed
+  }
+});
+```
+
+---
+
+### ⚙️ 2. Confirm No Preflight Trigger (Unless Needed)
+
+Avoid setting **custom headers** unless required. The more minimal your fetch call is, the more likely it is to avoid triggering **CORS preflight OPTIONS** calls, which require the backend to support additional headers.
+
+---
+
+### 🔁 3. Test Direct Browser Visit
+
+Paste this into the browser:
+
+```
+https://engineering-calc-api.vercel.app/api/slope?rise=6&run=12
+```
+
+✅ If this works in browser but fails in frontend → it's a frontend `fetch()` or CORS header issue.
+
+---
+
+### 🛑 4. If You See 401 in Dev Tools: Ensure It’s Not a Proxy Misconfiguration
+
+* If using **Vite, Webpack DevServer, or CRA**, ensure no proxy rules are rewriting the request.
+* No auth tokens or session cookies are being sent.
+
+---
+
+## ✅ Final Checklist for Frontend Agent
+
+| Task                             | Instruction                                             |
+| -------------------------------- | ------------------------------------------------------- |
+| ✅ Use plain `fetch()`            | No credentials, no headers for GET                      |
+| ✅ Use full URL                   | `https://engineering-calc-api.vercel.app/api/slope?...` |
+| ✅ Validate from browser          | Confirm endpoint works directly                         |
+| ✅ Ensure backend allows CORS     | You’ve already done this                                |
+| ✅ Do not use proxy unless needed | Keep it simple for now                                  |
+
+---
+
+## 🧪 Sample Frontend Code (Safe)
+
+```ts
+const [rise, setRise] = useState('');
+const [run, setRun] = useState('');
+const [result, setResult] = useState(null);
+
+const calculateSlope = async () => {
+  try {
+    const res = await fetch(`https://engineering-calc-api.vercel.app/api/slope?rise=${rise}&run=${run}`);
+    const data = await res.json();
+    setResult(data);
+  } catch (err) {
+    console.error('Fetch error:', err);
+  }
+};
+```
+
+---
+
+Let me know if you want me to write a reusable `useSlopeCalculation()` React hook or drop this logic into your frontend agent's file.

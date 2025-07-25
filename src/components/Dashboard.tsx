@@ -1,6 +1,8 @@
-import { Calculator, Beaker, Ruler, Droplet, Zap, Wrench } from "lucide-react";
+import { Calculator, Beaker, Ruler, Droplet, Zap, Wrench, Settings } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import ApiTest from "./ApiTest";
 
 interface CalculationType {
   id: string;
@@ -67,15 +69,49 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onSelectCalculation }: DashboardProps) {
+  const [showApiTest, setShowApiTest] = useState(false);
+
+  if (showApiTest) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <Button 
+              variant="ghost" 
+              onClick={() => setShowApiTest(false)}
+              className="mb-4"
+            >
+              ← Back to Dashboard
+            </Button>
+          </div>
+          <ApiTest />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Engineering Calculator</h1>
-          <p className="text-lg text-muted-foreground">
-            Select a calculation type to get started with AI-powered engineering calculations
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold text-foreground mb-2">Engineering Calculator</h1>
+              <p className="text-lg text-muted-foreground">
+                Select a calculation type to get started with AI-powered engineering calculations
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowApiTest(true)}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              API Test
+            </Button>
+          </div>
         </div>
 
         {/* Calculation Types Grid */}
