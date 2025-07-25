@@ -1,103 +1,149 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { checkApiHealth, testCors, getApiInfo } from "@/lib/api";
-import { Wifi, WifiOff, CheckCircle, XCircle } from "lucide-react";
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { checkApiHealth, testCors, getApiInfo } from '../lib/api';
+
+interface TestResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+  timestamp: string;
+}
 
 export default function ApiTest() {
-  const [healthStatus, setHealthStatus] = useState<{
-    loading: boolean;
-    success?: boolean;
-    data?: any;
-    error?: string;
-  }>({ loading: false });
+  const [results, setResults] = useState<{
+    health: TestResult | null;
+    cors: TestResult | null;
+    info: TestResult | null;
+  }>({
+    health: null,
+    cors: null,
+    info: null,
+  });
 
-  const [corsStatus, setCorsStatus] = useState<{
-    loading: boolean;
-    success?: boolean;
-    data?: any;
-    error?: string;
-  }>({ loading: false });
+  const [loading, setLoading] = useState<{
+    health: boolean;
+    cors: boolean;
+    info: boolean;
+  }>({
+    health: false,
+    cors: false,
+    info: false,
+  });
 
-  const [apiInfo, setApiInfo] = useState<{
-    loading: boolean;
-    success?: boolean;
-    data?: any;
-    error?: string;
-  }>({ loading: false });
-
-  const testHealth = async () => {
-    setHealthStatus({ loading: true });
-    const result = await checkApiHealth();
-    setHealthStatus({
-      loading: false,
-      success: result.success,
-      data: result.success ? result.data : undefined,
-      error: result.success ? undefined : result.error,
-    });
+  const runTest = async (testType: 'health' | 'cors' | 'info') => {
+    setLoading(prev => ({ ...prev, [testType]: true }));
+    
+    try {
+      let apiResult: any;
+      
+      switch (testType) {
+        case 'health':
+          apiResult = await checkApiHealth();
+          break;
+        case 'cors':
+          apiResult = await testCors();
+          break;
+        case 'info':
+          apiResult = await getApiInfo();
+          break;
+        default:
+          throw new Error('Unknown test type');
+      }
+      
+      const result: TestResult = {
+        success: apiResult.success,
+        data: apiResult.data,
+        error: apiResult.error,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      
+      setResults(prev => ({
+        ...prev,
+        [testType]: result
+      }));
+    } catch (error) {
+      setResults(prev => ({
+        ...prev,
+        [testType]: {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toLocaleTimeString()
+        }
+      }));
+    } finally {
+      setLoading(prev => ({ ...prev, [testType]: false }));
+    }
   };
 
-  const testCorsConnection = async () => {
-    setCorsStatus({ loading: true });
-    const result = await testCors();
-    setCorsStatus({
-      loading: false,
-      success: result.success,
-      data: result.success ? result.data : undefined,
-      error: result.success ? undefined : result.error,
-    });
+  const runDirectFetchTest = async () => {
+    try {
+      // Test direct fetch without any headers
+      const response = await fetch('https://engineering-calc-api.vercel.app/api/health');
+      const data = await response.json();
+      console.log('Direct fetch test successful:', data);
+      alert('Direct fetch test successful! Check console for details.');
+    } catch (error) {
+      console.error('Direct fetch test failed:', error);
+      alert('Direct fetch test failed! Check console for details.');
+    }
   };
 
-  const getApiInformation = async () => {
-    setApiInfo({ loading: true });
-    const result = await getApiInfo();
-    setApiInfo({
-      loading: false,
-      success: result.success,
-      data: result.success ? result.data : undefined,
-      error: result.success ? undefined : result.error,
-    });
+  const getEnvironmentInfo = () => {
+    return {
+      isDev: import.meta.env.DEV,
+      apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'https://engineering-calc-api.vercel.app',
+      currentOrigin: window.location.origin,
+      userAgent: navigator.userAgent
+    };
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">API Connection Test</h2>
-      
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">API Connection Test</h2>
+        <Button onClick={runDirectFetchTest} variant="outline">
+          Test Direct Fetch
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Health Check */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              {healthStatus.loading ? (
-                <Wifi className="h-5 w-5 animate-pulse" />
-              ) : healthStatus.success ? (
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              ) : healthStatus.error ? (
-                <XCircle className="h-5 w-5 text-red-500" />
+              {results.health?.success ? (
+                <Badge variant="default" className="bg-green-500">✓</Badge>
+              ) : results.health ? (
+                <Badge variant="destructive">✗</Badge>
               ) : (
-                <Wifi className="h-5 w-5 text-gray-400" />
+                <Badge variant="secondary">?</Badge>
               )}
               Health Check
             </CardTitle>
             <CardDescription>Test API health endpoint</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Button 
-              onClick={testHealth} 
-              disabled={healthStatus.loading}
+              onClick={() => runTest('health')} 
+              disabled={loading.health}
               className="w-full"
             >
-              {healthStatus.loading ? "Testing..." : "Test Health"}
+              {loading.health ? 'Testing...' : 'Test Health'}
             </Button>
-            {healthStatus.data && (
-              <div className="mt-3 p-2 bg-green-50 rounded text-sm">
-                <p><strong>Status:</strong> {healthStatus.data.status}</p>
-                <p><strong>Message:</strong> {healthStatus.data.message}</p>
-              </div>
-            )}
-            {healthStatus.error && (
-              <div className="mt-3 p-2 bg-red-50 rounded text-sm text-red-600">
-                <strong>Error:</strong> {healthStatus.error}
+            {results.health && (
+              <div className="text-sm">
+                <div className="font-medium">Status: {results.health.success ? 'Success' : 'Failed'}</div>
+                {results.health.error && (
+                  <div className="text-red-600 mt-1">{results.health.error}</div>
+                )}
+                {results.health.data && (
+                  <pre className="text-xs bg-gray-100 p-2 rounded mt-2 overflow-auto">
+                    {JSON.stringify(results.health.data, null, 2)}
+                  </pre>
+                )}
+                <div className="text-gray-500 mt-1">Time: {results.health.timestamp}</div>
               </div>
             )}
           </CardContent>
@@ -107,35 +153,37 @@ export default function ApiTest() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              {corsStatus.loading ? (
-                <Wifi className="h-5 w-5 animate-pulse" />
-              ) : corsStatus.success ? (
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              ) : corsStatus.error ? (
-                <XCircle className="h-5 w-5 text-red-500" />
+              {results.cors?.success ? (
+                <Badge variant="default" className="bg-green-500">✓</Badge>
+              ) : results.cors ? (
+                <Badge variant="destructive">✗</Badge>
               ) : (
-                <Wifi className="h-5 w-5 text-gray-400" />
+                <Badge variant="secondary">?</Badge>
               )}
               CORS Test
             </CardTitle>
             <CardDescription>Test CORS configuration</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Button 
-              onClick={testCorsConnection} 
-              disabled={corsStatus.loading}
+              onClick={() => runTest('cors')} 
+              disabled={loading.cors}
               className="w-full"
             >
-              {corsStatus.loading ? "Testing..." : "Test CORS"}
+              {loading.cors ? 'Testing...' : 'Test CORS'}
             </Button>
-            {corsStatus.data && (
-              <div className="mt-3 p-2 bg-green-50 rounded text-sm">
-                <p><strong>Message:</strong> {corsStatus.data.message}</p>
-              </div>
-            )}
-            {corsStatus.error && (
-              <div className="mt-3 p-2 bg-red-50 rounded text-sm text-red-600">
-                <strong>Error:</strong> {corsStatus.error}
+            {results.cors && (
+              <div className="text-sm">
+                <div className="font-medium">Status: {results.cors.success ? 'Success' : 'Failed'}</div>
+                {results.cors.error && (
+                  <div className="text-red-600 mt-1">{results.cors.error}</div>
+                )}
+                {results.cors.data && (
+                  <pre className="text-xs bg-gray-100 p-2 rounded mt-2 overflow-auto">
+                    {JSON.stringify(results.cors.data, null, 2)}
+                  </pre>
+                )}
+                <div className="text-gray-500 mt-1">Time: {results.cors.timestamp}</div>
               </div>
             )}
           </CardContent>
@@ -145,43 +193,44 @@ export default function ApiTest() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              {apiInfo.loading ? (
-                <Wifi className="h-5 w-5 animate-pulse" />
-              ) : apiInfo.success ? (
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              ) : apiInfo.error ? (
-                <XCircle className="h-5 w-5 text-red-500" />
+              {results.info?.success ? (
+                <Badge variant="default" className="bg-green-500">✓</Badge>
+              ) : results.info ? (
+                <Badge variant="destructive">✗</Badge>
               ) : (
-                <Wifi className="h-5 w-5 text-gray-400" />
+                <Badge variant="secondary">?</Badge>
               )}
               API Info
             </CardTitle>
             <CardDescription>Get API information</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Button 
-              onClick={getApiInformation} 
-              disabled={apiInfo.loading}
+              onClick={() => runTest('info')} 
+              disabled={loading.info}
               className="w-full"
             >
-              {apiInfo.loading ? "Loading..." : "Get Info"}
+              {loading.info ? 'Testing...' : 'Get Info'}
             </Button>
-            {apiInfo.data && (
-              <div className="mt-3 p-2 bg-blue-50 rounded text-sm">
-                <p><strong>Message:</strong> {apiInfo.data.message}</p>
-                <p><strong>Version:</strong> {apiInfo.data.version}</p>
-              </div>
-            )}
-            {apiInfo.error && (
-              <div className="mt-3 p-2 bg-red-50 rounded text-sm text-red-600">
-                <strong>Error:</strong> {apiInfo.error}
+            {results.info && (
+              <div className="text-sm">
+                <div className="font-medium">Status: {results.info.success ? 'Success' : 'Failed'}</div>
+                {results.info.error && (
+                  <div className="text-red-600 mt-1">{results.info.error}</div>
+                )}
+                {results.info.data && (
+                  <pre className="text-xs bg-gray-100 p-2 rounded mt-2 overflow-auto">
+                    {JSON.stringify(results.info.data, null, 2)}
+                  </pre>
+                )}
+                <div className="text-gray-500 mt-1">Time: {results.info.timestamp}</div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Environment Info */}
+      {/* Environment Configuration */}
       <Card>
         <CardHeader>
           <CardTitle>Environment Configuration</CardTitle>
@@ -189,9 +238,35 @@ export default function ApiTest() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
-            <p><strong>API Base URL:</strong> {import.meta.env.VITE_API_BASE_URL || 'https://engineering-calc-api.vercel.app'}</p>
-            <p><strong>Environment:</strong> {import.meta.env.MODE}</p>
-            <p><strong>Node Environment:</strong> {import.meta.env.NODE_ENV}</p>
+            <div><strong>API Base URL:</strong> {getEnvironmentInfo().apiBaseUrl}</div>
+            <div><strong>Environment:</strong> {getEnvironmentInfo().isDev ? 'development' : 'production'}</div>
+            <div><strong>Current Origin:</strong> {getEnvironmentInfo().currentOrigin}</div>
+            <div><strong>Node Environment:</strong> {import.meta.env.MODE}</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* CORS Troubleshooting */}
+      <Card>
+        <CardHeader>
+          <CardTitle>CORS Troubleshooting</CardTitle>
+          <CardDescription>Common solutions for CORS issues</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 text-sm">
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <strong>Issue:</strong> CORS preflight requests failing
+              <br />
+              <strong>Solution:</strong> Backend needs to handle OPTIONS requests and return proper CORS headers
+            </div>
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+              <strong>Development:</strong> Using Vite proxy to avoid CORS during local development
+              <br />
+              <strong>Production:</strong> Backend must allow requests from your frontend domain
+            </div>
+            <div className="p-3 bg-green-50 border border-green-200 rounded">
+              <strong>Quick Fix:</strong> Try the "Test Direct Fetch" button to bypass frontend CORS handling
+            </div>
           </div>
         </CardContent>
       </Card>

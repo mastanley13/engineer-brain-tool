@@ -1,20 +1,26 @@
 // API service functions for Engineering Calculator Backend
 // Based on FRONTEND_HANDOFF.md specifications
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://engineering-calc-api.vercel.app';
+// Use proxy in development, direct URL in production
+const API_BASE_URL = import.meta.env.DEV 
+  ? '' // Use proxy in development
+  : (import.meta.env.VITE_API_BASE_URL || 'https://engineering-calc-api.vercel.app');
 
-// Generic API request function
+// Generic API request function - simplified to avoid CORS preflight
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  // Simplified config to avoid CORS preflight requests
   const config: RequestInit = {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    // Remove Content-Type header for GET requests to avoid preflight
     ...options,
   };
+
+  // Only add headers if they're explicitly provided and not empty
+  if (options.headers && Object.keys(options.headers).length > 0) {
+    config.headers = options.headers;
+  }
 
   try {
     const response = await fetch(url, config);
