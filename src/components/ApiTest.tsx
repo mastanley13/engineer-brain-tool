@@ -32,6 +32,13 @@ export default function ApiTest() {
     info: false,
   });
 
+  const [connectivityResults, setConnectivityResults] = useState<{
+    dns: boolean;
+    ping: boolean;
+    https: boolean;
+    cors: boolean;
+  } | null>(null);
+
   const runTest = async (testType: 'health' | 'cors' | 'info') => {
     setLoading(prev => ({ ...prev, [testType]: true }));
     
@@ -79,15 +86,113 @@ export default function ApiTest() {
 
   const runDirectFetchTest = async () => {
     try {
+      console.log('Starting direct fetch test...');
+      
       // Test direct fetch without any headers
-      const response = await fetch('https://engineering-calc-api.vercel.app/api/health');
+      const response = await fetch('https://engineering-calc-api.vercel.app/api/health', {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
       console.log('Direct fetch test successful:', data);
-      alert('Direct fetch test successful! Check console for details.');
+      alert(`Direct fetch test successful! Status: ${response.status}\nCheck console for details.`);
     } catch (error) {
       console.error('Direct fetch test failed:', error);
-      alert('Direct fetch test failed! Check console for details.');
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      
+      let errorMessage = 'Direct fetch test failed!\n';
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        errorMessage += 'This suggests a network connectivity issue or the API is not accessible.\n';
+        errorMessage += 'Possible causes:\n';
+        errorMessage += '1. API server is down\n';
+        errorMessage += '2. Network connectivity issues\n';
+        errorMessage += '3. API URL is incorrect\n';
+        errorMessage += '4. Firewall blocking the request';
+      } else {
+        errorMessage += `Error: ${error.message}`;
+      }
+      
+      alert(errorMessage + '\nCheck console for detailed error information.');
     }
+  };
+
+  const runConnectivityTests = async () => {
+    const results = {
+      dns: false,
+      ping: false,
+      https: false,
+      cors: false
+    };
+
+    try {
+      // Test 1: DNS Resolution
+      console.log('Testing DNS resolution...');
+      const dnsTest = await fetch('https://engineering-calc-api.vercel.app', {
+        method: 'HEAD',
+        mode: 'no-cors'
+      });
+      results.dns = true;
+      console.log('DNS resolution successful');
+    } catch (error) {
+      console.log('DNS resolution failed:', error);
+    }
+
+    try {
+      // Test 2: HTTPS Connection
+      console.log('Testing HTTPS connection...');
+      const httpsTest = await fetch('https://engineering-calc-api.vercel.app', {
+        method: 'GET',
+        mode: 'no-cors'
+      });
+      results.https = true;
+      console.log('HTTPS connection successful');
+    } catch (error) {
+      console.log('HTTPS connection failed:', error);
+    }
+
+    try {
+      // Test 3: API Endpoint
+      console.log('Testing API endpoint...');
+      const apiTest = await fetch('https://engineering-calc-api.vercel.app/api/health', {
+        method: 'GET',
+        mode: 'no-cors'
+      });
+      results.ping = true;
+      console.log('API endpoint accessible');
+    } catch (error) {
+      console.log('API endpoint failed:', error);
+    }
+
+    try {
+      // Test 4: CORS
+      console.log('Testing CORS...');
+      const corsTest = await fetch('https://engineering-calc-api.vercel.app/api/health', {
+        method: 'GET',
+        mode: 'cors'
+      });
+      results.cors = true;
+      console.log('CORS test successful');
+    } catch (error) {
+      console.log('CORS test failed:', error);
+    }
+
+    setConnectivityResults(results);
+    console.log('Connectivity test results:', results);
   };
 
   const getEnvironmentInfo = () => {
@@ -103,10 +208,73 @@ export default function ApiTest() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">API Connection Test</h2>
-        <Button onClick={runDirectFetchTest} variant="outline">
-          Test Direct Fetch
-        </Button>
+        <div className="space-x-2">
+          <Button onClick={runDirectFetchTest} variant="outline">
+            Test Direct Fetch
+          </Button>
+          <Button onClick={runConnectivityTests} variant="outline">
+            Run Connectivity Tests
+          </Button>
+        </div>
       </div>
+
+      {/* Connectivity Test Results */}
+      {connectivityResults && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Connectivity Test Results</CardTitle>
+            <CardDescription>Network connectivity diagnostics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="font-medium">DNS Resolution</div>
+                <Badge variant={connectivityResults.dns ? "default" : "destructive"}>
+                  {connectivityResults.dns ? "✓" : "✗"}
+                </Badge>
+              </div>
+              <div className="text-center">
+                <div className="font-medium">HTTPS Connection</div>
+                <Badge variant={connectivityResults.https ? "default" : "destructive"}>
+                  {connectivityResults.https ? "✓" : "✗"}
+                </Badge>
+              </div>
+              <div className="text-center">
+                <div className="font-medium">API Endpoint</div>
+                <Badge variant={connectivityResults.ping ? "default" : "destructive"}>
+                  {connectivityResults.ping ? "✓" : "✗"}
+                </Badge>
+              </div>
+              <div className="text-center">
+                <div className="font-medium">CORS Support</div>
+                <Badge variant={connectivityResults.cors ? "default" : "destructive"}>
+                  {connectivityResults.cors ? "✓" : "✗"}
+                </Badge>
+              </div>
+            </div>
+            {!connectivityResults.dns && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                <strong>Critical Issue:</strong> DNS resolution failed. The API domain may not exist or there's a network connectivity problem.
+              </div>
+            )}
+            {connectivityResults.dns && !connectivityResults.https && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                <strong>HTTPS Issue:</strong> DNS works but HTTPS connection failed. This could be a server configuration issue.
+              </div>
+            )}
+            {connectivityResults.https && !connectivityResults.ping && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                <strong>API Issue:</strong> Server is reachable but API endpoint is not responding. The API may be down or misconfigured.
+              </div>
+            )}
+            {connectivityResults.ping && !connectivityResults.cors && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+                <strong>CORS Issue:</strong> API is working but CORS is not properly configured. This is a backend configuration issue.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Health Check */}
