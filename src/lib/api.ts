@@ -1,37 +1,48 @@
 // API service functions for Engineering Calculator Backend
-// Based on FRONTEND_HANDOFF.md specifications
+// Based on FRONTEND_HANDOFF.md specifications and enhanced backend CORS configuration
 
-// Use proxy in development, direct URL in production
+// Use local backend in development, production API in production
 const API_BASE_URL = import.meta.env.DEV 
-  ? '' // Use proxy in development
+  ? 'http://localhost:3001' // Local backend for development
   : (import.meta.env.VITE_API_BASE_URL || 'https://engineering-calc-api.vercel.app');
 
-// Generic API request function - simplified to avoid CORS preflight
+// Enhanced API request function with better error handling and CORS support
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   
-  // Simplified config to avoid CORS preflight requests
+  // Enhanced config with CORS support
   const config: RequestInit = {
     method: 'GET',
-    // Remove Content-Type header for GET requests to avoid preflight
+    credentials: 'include', // Support credentials as backend now handles this
+    headers: {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      ...options.headers,
+    },
     ...options,
   };
 
-  // Only add headers if they're explicitly provided and not empty
-  if (options.headers && Object.keys(options.headers).length > 0) {
-    config.headers = options.headers;
+  // Remove Content-Type for GET requests to avoid preflight
+  if (config.method === 'GET' && config.headers) {
+    delete (config.headers as any)['Content-Type'];
   }
 
   try {
+    console.log(`🌐 API Request: ${config.method} ${url}`);
     const response = await fetch(url, config);
     
+    console.log(`📡 Response Status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log(`✅ API Response:`, data);
+    return data;
   } catch (error) {
-    console.error('API request failed:', error);
+    console.error('❌ API request failed:', error);
+    console.error('Request details:', { url, config });
     throw error;
   }
 }
@@ -102,6 +113,46 @@ export async function getApiInfo() {
       data: response
     };
   } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Enhanced direct fetch test function
+export async function testDirectFetch() {
+  try {
+    console.log('🧪 Testing direct fetch with enhanced CORS support...');
+    
+    const response = await fetch(`${API_BASE_URL}/api/health`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-Custom-Header': 'frontend-test'
+      }
+    });
+    
+    console.log('📡 Direct fetch response status:', response.status);
+    console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ Direct fetch successful:', data);
+    
+    return {
+      success: true,
+      data: data,
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries())
+    };
+  } catch (error) {
+    console.error('❌ Direct fetch failed:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

@@ -8,15 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 5173,
-    proxy: {
-      // Proxy API requests during development to avoid CORS
-      '/api': {
-        target: 'https://engineering-calc-api.vercel.app',
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path
-      }
-    }
+    // Removed proxy - now using direct local backend connection
   },
   plugins: [
     react(),

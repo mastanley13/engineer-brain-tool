@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { checkApiHealth, testCors, getApiInfo } from '../lib/api';
+import { checkApiHealth, testCors, getApiInfo, testDirectFetch } from '../lib/api';
 
 interface TestResult {
   success: boolean;
   data?: any;
   error?: string;
   timestamp: string;
+  status?: number;
+  headers?: any;
 }
 
 export default function ApiTest() {
@@ -16,20 +18,24 @@ export default function ApiTest() {
     health: TestResult | null;
     cors: TestResult | null;
     info: TestResult | null;
+    directFetch: TestResult | null;
   }>({
     health: null,
     cors: null,
     info: null,
+    directFetch: null,
   });
 
   const [loading, setLoading] = useState<{
     health: boolean;
     cors: boolean;
     info: boolean;
+    directFetch: boolean;
   }>({
     health: false,
     cors: false,
     info: false,
+    directFetch: false,
   });
 
   const [connectivityResults, setConnectivityResults] = useState<{
@@ -39,7 +45,7 @@ export default function ApiTest() {
     cors: boolean;
   } | null>(null);
 
-  const runTest = async (testType: 'health' | 'cors' | 'info') => {
+  const runTest = async (testType: 'health' | 'cors' | 'info' | 'directFetch') => {
     setLoading(prev => ({ ...prev, [testType]: true }));
     
     try {
@@ -55,6 +61,9 @@ export default function ApiTest() {
         case 'info':
           apiResult = await getApiInfo();
           break;
+        case 'directFetch':
+          apiResult = await testDirectFetch();
+          break;
         default:
           throw new Error('Unknown test type');
       }
@@ -63,6 +72,8 @@ export default function ApiTest() {
         success: apiResult.success,
         data: apiResult.data,
         error: apiResult.error,
+        status: apiResult.status,
+        headers: apiResult.headers,
         timestamp: new Date().toLocaleTimeString()
       };
       
@@ -81,53 +92,6 @@ export default function ApiTest() {
       }));
     } finally {
       setLoading(prev => ({ ...prev, [testType]: false }));
-    }
-  };
-
-  const runDirectFetchTest = async () => {
-    try {
-      console.log('Starting direct fetch test...');
-      
-      // Test direct fetch without any headers
-      const response = await fetch('https://engineering-calc-api.vercel.app/api/health', {
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('Direct fetch test successful:', data);
-      alert(`Direct fetch test successful! Status: ${response.status}\nCheck console for details.`);
-    } catch (error) {
-      console.error('Direct fetch test failed:', error);
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
-      
-      let errorMessage = 'Direct fetch test failed!\n';
-      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-        errorMessage += 'This suggests a network connectivity issue or the API is not accessible.\n';
-        errorMessage += 'Possible causes:\n';
-        errorMessage += '1. API server is down\n';
-        errorMessage += '2. Network connectivity issues\n';
-        errorMessage += '3. API URL is incorrect\n';
-        errorMessage += '4. Firewall blocking the request';
-      } else {
-        errorMessage += `Error: ${error.message}`;
-      }
-      
-      alert(errorMessage + '\nCheck console for detailed error information.');
     }
   };
 
@@ -209,8 +173,8 @@ export default function ApiTest() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">API Connection Test</h2>
         <div className="space-x-2">
-          <Button onClick={runDirectFetchTest} variant="outline">
-            Test Direct Fetch
+          <Button onClick={() => runTest('directFetch')} variant="outline" disabled={loading.directFetch}>
+            {loading.directFetch ? 'Testing...' : 'Test Direct Fetch'}
           </Button>
           <Button onClick={runConnectivityTests} variant="outline">
             Run Connectivity Tests
@@ -276,7 +240,7 @@ export default function ApiTest() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Health Check */}
         <Card>
           <CardHeader>
@@ -357,6 +321,57 @@ export default function ApiTest() {
           </CardContent>
         </Card>
 
+        {/* Direct Fetch Test */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {results.directFetch?.success ? (
+                <Badge variant="default" className="bg-green-500">✓</Badge>
+              ) : results.directFetch ? (
+                <Badge variant="destructive">✗</Badge>
+              ) : (
+                <Badge variant="secondary">?</Badge>
+              )}
+              Direct Fetch
+            </CardTitle>
+            <CardDescription>Test enhanced CORS support</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              onClick={() => runTest('directFetch')} 
+              disabled={loading.directFetch}
+              className="w-full"
+            >
+              {loading.directFetch ? 'Testing...' : 'Test Direct Fetch'}
+            </Button>
+            {results.directFetch && (
+              <div className="text-sm">
+                <div className="font-medium">Status: {results.directFetch.success ? 'Success' : 'Failed'}</div>
+                {results.directFetch.status && (
+                  <div className="text-blue-600">HTTP: {results.directFetch.status}</div>
+                )}
+                {results.directFetch.error && (
+                  <div className="text-red-600 mt-1">{results.directFetch.error}</div>
+                )}
+                {results.directFetch.data && (
+                  <pre className="text-xs bg-gray-100 p-2 rounded mt-2 overflow-auto">
+                    {JSON.stringify(results.directFetch.data, null, 2)}
+                  </pre>
+                )}
+                {results.directFetch.headers && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-blue-600">Response Headers</summary>
+                    <pre className="text-xs bg-blue-50 p-2 rounded mt-1 overflow-auto">
+                      {JSON.stringify(results.directFetch.headers, null, 2)}
+                    </pre>
+                  </details>
+                )}
+                <div className="text-gray-500 mt-1">Time: {results.directFetch.timestamp}</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* API Info */}
         <Card>
           <CardHeader>
@@ -414,26 +429,25 @@ export default function ApiTest() {
         </CardContent>
       </Card>
 
-      {/* CORS Troubleshooting */}
+      {/* Backend CORS Status */}
       <Card>
         <CardHeader>
-          <CardTitle>CORS Troubleshooting</CardTitle>
-          <CardDescription>Common solutions for CORS issues</CardDescription>
+          <CardTitle>Backend CORS Status</CardTitle>
+          <CardDescription>Enhanced CORS configuration summary</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 text-sm">
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <strong>Issue:</strong> CORS preflight requests failing
-              <br />
-              <strong>Solution:</strong> Backend needs to handle OPTIONS requests and return proper CORS headers
+            <div className="p-3 bg-green-50 border border-green-200 rounded">
+              <strong>✅ Enhanced CORS Support:</strong> Backend now supports dynamic origin handling, credentials, and custom headers
             </div>
             <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-              <strong>Development:</strong> Using Vite proxy to avoid CORS during local development
-              <br />
-              <strong>Production:</strong> Backend must allow requests from your frontend domain
+              <strong>🔧 Supported Origins:</strong> localhost, 127.0.0.1, Vercel previews, and production domains
             </div>
-            <div className="p-3 bg-green-50 border border-green-200 rounded">
-              <strong>Quick Fix:</strong> Try the "Test Direct Fetch" button to bypass frontend CORS handling
+            <div className="p-3 bg-purple-50 border border-purple-200 rounded">
+              <strong>📋 Enhanced Headers:</strong> X-Custom-Header, X-Requested-With, Accept, and more
+            </div>
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <strong>📊 Request Logging:</strong> Backend logs all requests for debugging
             </div>
           </div>
         </CardContent>
