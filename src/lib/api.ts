@@ -104,6 +104,273 @@ export async function calculateSlope(rise: number, run: number) {
   }
 }
 
+// Civil Engineering API Functions
+
+// Grade percentage calculation API call
+export async function calculateGradePercent(rise: number, run: number) {
+  try {
+    const response = await apiRequest(`/api/grade-percent?rise=${rise}&run=${run}`);
+    
+    if (response.status === 'success') {
+      return {
+        success: true,
+        data: response.result,
+        workShown: response.workShown
+      };
+    } else {
+      return {
+        success: false,
+        error: response.message
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Slope angle calculation API call
+export async function calculateSlopeAngle(rise: number, run: number) {
+  try {
+    const response = await apiRequest(`/api/slope-angle?rise=${rise}&run=${run}`);
+    
+    if (response.status === 'success') {
+      return {
+        success: true,
+        data: response.result,
+        workShown: response.workShown
+      };
+    } else {
+      return {
+        success: false,
+        error: response.message
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Horizontal distance calculation API call
+export async function calculateHorizontalDistance(rise: number, slope: number) {
+  try {
+    const response = await apiRequest(`/api/horizontal-distance?rise=${rise}&slope=${slope}`);
+    
+    if (response.status === 'success') {
+      return {
+        success: true,
+        data: response.result,
+        workShown: response.workShown
+      };
+    } else {
+      return {
+        success: false,
+        error: response.message
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Vertical rise calculation API call
+export async function calculateVerticalRise(slope: number, run: number) {
+  try {
+    const response = await apiRequest(`/api/vertical-rise?slope=${slope}&run=${run}`);
+    
+    if (response.status === 'success') {
+      return {
+        success: true,
+        data: response.result,
+        workShown: response.workShown
+      };
+    } else {
+      return {
+        success: false,
+        error: response.message
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// General Math API Functions
+
+// Quadratic equation solver API call
+export async function calculateQuadraticEquation(a: number, b: number, c: number) {
+  try {
+    const response = await apiRequest(`/api/quadratic-equation?a=${a}&b=${b}&c=${c}`);
+    
+    if (response.status === 'success') {
+      return {
+        success: true,
+        data: response.result,
+        workShown: response.workShown
+      };
+    } else {
+      return {
+        success: false,
+        error: response.message
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Trigonometric calculations API call
+export async function calculateTrigonometric(angle: number, unit: string = 'degrees', func: string = 'sin') {
+  try {
+    const response = await apiRequest(`/api/trigonometric?angle=${angle}&unit=${unit}&function=${func}`);
+    
+    if (response.status === 'success') {
+      return {
+        success: true,
+        data: response.result,
+        workShown: response.workShown
+      };
+    } else {
+      return {
+        success: false,
+        error: response.message
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Percent error calculation API call
+export async function calculatePercentError(experimental: number, theoretical: number) {
+  try {
+    const response = await apiRequest(`/api/percent-error?experimental=${experimental}&theoretical=${theoretical}`);
+    
+    if (response.status === 'success') {
+      return {
+        success: true,
+        data: response.result,
+        workShown: response.workShown
+      };
+    } else {
+      return {
+        success: false,
+        error: response.message
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Electrical Engineering API Functions
+
+// Ohm's Law API call
+export async function calculateOhmsLaw(voltage?: number, current?: number, resistance?: number) {
+  try {
+    let params = [];
+    if (voltage !== undefined) params.push(`voltage=${voltage}`);
+    if (current !== undefined) params.push(`current=${current}`);
+    if (resistance !== undefined) params.push(`resistance=${resistance}`);
+    
+    const response = await apiRequest(`/api/ohms-law?${params.join('&')}`);
+    
+    if (response.status === 'success') {
+      return {
+        success: true,
+        data: response.result,
+        workShown: response.workShown
+      };
+    } else {
+      return {
+        success: false,
+        error: response.message
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Power calculations API call
+export async function calculatePowerVI(voltage?: number, current?: number, resistance?: number) {
+  try {
+    let params = [];
+    if (voltage !== undefined) params.push(`voltage=${voltage}`);
+    if (current !== undefined) params.push(`current=${current}`);
+    if (resistance !== undefined) params.push(`resistance=${resistance}`);
+    
+    const response = await apiRequest(`/api/power-vi?${params.join('&')}`);
+    
+    if (response.status === 'success') {
+      return {
+        success: true,
+        data: response.result,
+        workShown: response.workShown
+      };
+    } else {
+      return {
+        success: false,
+        error: response.message
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Series resistance API call
+export async function calculateResistanceSeries(resistances: number[]) {
+  try {
+    const resistanceString = resistances.join(',');
+    const response = await apiRequest(`/api/resistance-series?resistances=${resistanceString}`);
+    
+    if (response.status === 'success') {
+      return {
+        success: true,
+        data: response.result,
+        workShown: response.workShown
+      };
+    } else {
+      return {
+        success: false,
+        error: response.message
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
 // Get API information
 export async function getApiInfo() {
   try {
