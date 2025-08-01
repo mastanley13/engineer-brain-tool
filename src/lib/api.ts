@@ -1,10 +1,8 @@
 // API service functions for Engineering Calculator Backend
 // Based on FRONTEND_HANDOFF.md specifications and enhanced backend CORS configuration
 
-// Use local backend in development, production API in production
-const API_BASE_URL = import.meta.env.DEV 
-  ? 'http://localhost:3001' // Local backend for development
-  : (import.meta.env.VITE_API_BASE_URL || 'https://engineering-calc-api.vercel.app');
+// Always use the production API - it has all 11 calculation endpoints
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://engineering-calc-api.vercel.app';
 
 // Enhanced API request function with better error handling and CORS support
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
@@ -288,12 +286,12 @@ export async function calculatePercentError(experimental: number, theoretical: n
 // Ohm's Law API call
 export async function calculateOhmsLaw(voltage?: number, current?: number, resistance?: number) {
   try {
-    let params = [];
-    if (voltage !== undefined) params.push(`voltage=${voltage}`);
-    if (current !== undefined) params.push(`current=${current}`);
-    if (resistance !== undefined) params.push(`resistance=${resistance}`);
+    const params = new URLSearchParams();
+    if (voltage !== undefined) params.append('voltage', voltage.toString());
+    if (current !== undefined) params.append('current', current.toString());
+    if (resistance !== undefined) params.append('resistance', resistance.toString());
     
-    const response = await apiRequest(`/api/ohms-law?${params.join('&')}`);
+    const response = await apiRequest(`/api/ohms-law?${params}`);
     
     if (response.status === 'success') {
       return {
@@ -315,15 +313,15 @@ export async function calculateOhmsLaw(voltage?: number, current?: number, resis
   }
 }
 
-// Power calculations API call
+// Power VI API call
 export async function calculatePowerVI(voltage?: number, current?: number, resistance?: number) {
   try {
-    let params = [];
-    if (voltage !== undefined) params.push(`voltage=${voltage}`);
-    if (current !== undefined) params.push(`current=${current}`);
-    if (resistance !== undefined) params.push(`resistance=${resistance}`);
+    const params = new URLSearchParams();
+    if (voltage !== undefined) params.append('voltage', voltage.toString());
+    if (current !== undefined) params.append('current', current.toString());
+    if (resistance !== undefined) params.append('resistance', resistance.toString());
     
-    const response = await apiRequest(`/api/power-vi?${params.join('&')}`);
+    const response = await apiRequest(`/api/power-vi?${params}`);
     
     if (response.status === 'success') {
       return {
